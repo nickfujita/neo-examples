@@ -1,4 +1,4 @@
-# DEPLOY
+# IMPORT
 # import contract smartContracts/01-helloWorld.avm "" 01 False False
 #
 # INVOKE

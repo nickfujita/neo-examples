@@ -1,4 +1,4 @@
-# DEPLOY
+# IMPORT
 # import contract smartContracts/02-calculator.avm 070202 02 False False
 #
 # INVOKE
