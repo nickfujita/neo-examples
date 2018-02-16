@@ -1,3 +1,28 @@
+
+# BUILD TEST
+# build smartContracts/05-storage.py test 0710 05 True False testAll []
+#
+# Test invoke failed, since need_storage set to false and we try to access storage
+# build smartContracts/05-storage.py test 0710 05 False False testAll []
+#
+# True
+# build smartContracts/05-storage.py test 0710 05 True False put ['cheese','pizza']
+#
+# b'pizza'
+# build smartContracts/05-storage.py test 0710 05 True False get ['cheese']
+#
+# True
+# build smartContracts/05-storage.py test 0710 05 True False delete ['cheese']
+#
+# b''
+# build smartContracts/05-storage.py test 0710 05 True False get ['cheese']
+#
+# IMPORT
+# import contract smartContracts/05-storage.py test 0710 05 True False
+#
+# INVOKE
+# testinvoke <your_contract_hash> testAll []
+
 from boa.blockchain.vm.Neo.Storage import GetContext, Put, Delete, Get
 from boa.blockchain.vm.Neo.Runtime import Notify
 
