@@ -1,2 +1,2 @@
 # neo-smart-contracts
-A evolving repo of smart contracts for the NEO ecosystem
+Code examples for creating and working with smart contracts in the NEO ecosystem
