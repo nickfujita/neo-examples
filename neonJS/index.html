@@ -40,22 +40,42 @@
 
     <script type="text/javascript">
 
-      var testAddress = '';
-      var testPrivateKey = '';
-      var contractHash = '';
+      var fromAddress = 'AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y';
+      var testPrivateKey = 'KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr';
+      var nep5ContractHash = 'c88b3c96953f068efdabb17dff943b11e18157d7';
 
-      var targetAddress = '';
-      var amountToSend = 1;
+      var vaultContractHash = '46c668898bb1bbc43b3a3f780b34255eeb2384b4';
+
+      var contractAddress = 'AYEMaJD5w7NDMsYAQviMc8GZGm32rwifC8';
+
+      var toAddress = 'AH7gAsvyjaH2FLFchCcuH72ZtJug7wmRLH';
+      var amountToSend = 3;
 
       main();
 
       function main() {
         setupPrivateNet();
-        readBalance(targetAddress)
-        .then(amount => {
-          console.log(targetAddress);
-          console.log('Current balance: ' + amount);
-          return transferTokens(testAddress, targetAddress, amountToSend);
+        nep5TransferTest()
+        .then(depositTest)
+        .then(withdrawTest);
+      }
+
+      function fetchBalances(fromAddress, toAddress) {
+        return Promise.all([readBalance(fromAddress), readBalance(toAddress)])
+        .then(amounts => {
+          var fromAmount = amounts[0];
+          var toAmount = amounts[1];
+          console.log('From account current balance: ' + fromAmount);
+          console.log('To account current balance: ' + toAmount);
+          return;
+        });
+      }
+
+      function nep5TransferTest() {
+        console.log('NEP5 transfer test');
+        return fetchBalances(fromAddress, toAddress)
+        .then(() => {
+          return transferTokens(fromAddress, toAddress, amountToSend);
         })
         .then(wasSuccessful => {
           if (wasSuccessful) {
@@ -63,13 +83,59 @@
             // wait for next block then requery address balance
             console.log('Please wait for 1 min for next block to get new balance');
             console.log('VVV After 1 min the new balance will be printed below VVV');
-            setTimeout(function() {
-              readBalance(targetAddress)
-              .then(amount => {
-                console.log(targetAddress);
-                console.log('New balance: ' + amount);
-              })
-            }, 60 * 1000);
+            return new Promise((resolve, reject) => {
+              setTimeout(function() {
+                return fetchBalances(fromAddress, toAddress)
+                .then(resolve)
+                .catch(reject);
+              }, 60 * 1000);
+            })
+          }
+        });
+      }
+
+      function depositTest() {
+        console.log('Deposit test');
+        return fetchBalances(fromAddress, contractAddress)
+        .then(() => {
+          return deposit(fromAddress, amountToSend);
+        })
+        .then(wasSuccessful => {
+          if (wasSuccessful) {
+            // if transaction was submittes successfully
+            // wait for next block then requery address balance
+            console.log('Please wait for 1 min for next block to get new balance');
+            console.log('VVV After 1 min the new balance will be printed below VVV');
+            return new Promise((resolve, reject) => {
+              setTimeout(function() {
+                return fetchBalances(fromAddress, contractAddress)
+                .then(resolve)
+                .catch(reject);
+              }, 60 * 1000);
+            });
+          }
+        });
+      }
+
+      function withdrawTest() {
+        console.log('Withdraw test');
+        return fetchBalances(contractAddress, fromAddress)
+        .then(() => {
+          return withdraw(fromAddress, amountToSend);
+        })
+        .then(wasSuccessful => {
+          if (wasSuccessful) {
+            // if transaction was submittes successfully
+            // wait for next block then requery address balance
+            console.log('Please wait for 1 min for next block to get new balance');
+            console.log('VVV After 1 min the new balance will be printed below VVV');
+            return new Promise((resolve, reject) => {
+              setTimeout(function() {
+                return fetchBalances(contractAddress, fromAddress)
+                .then(resolve)
+                .catch(reject);
+              }, 60 * 1000);
+            });
           }
         });
       }
@@ -79,7 +145,7 @@
         var parsedAddress = Neon.sc.ContractParam.byteArray(address, 'address');
 
         return testInvoke({
-          scriptHash: contractHash,
+          scriptHash: nep5ContractHash,
           operation: 'balanceOf',
           args: [parsedAddress]
         })
@@ -108,9 +174,31 @@
         const parsedAmount = Neon.sc.ContractParam.byteArray(amount, 'fixed8');
 
         return doInvoke({
-          scriptHash: contractHash,
+          scriptHash: nep5ContractHash,
           operation: 'transfer',
           args: [scFromAddress, scToAddress, parsedAmount],
+        })
+      }
+
+      function deposit(fromAddress, amount) {
+        const scFromAddress = Neon.sc.ContractParam.byteArray(fromAddress, 'address');
+        const parsedAmount = Neon.sc.ContractParam.byteArray(amount, 'fixed8');
+
+        return doInvoke({
+          scriptHash: vaultContractHash,
+          operation: 'deposit',
+          args: [scFromAddress, parsedAmount],
+        })
+      }
+
+      function withdraw(fromAddress, amount) {
+        const scFromAddress = Neon.sc.ContractParam.byteArray(fromAddress, 'address');
+        const parsedAmount = Neon.sc.ContractParam.byteArray(amount, 'fixed8');
+
+        return doInvoke({
+          scriptHash: vaultContractHash,
+          operation: 'withdraw',
+          args: [scFromAddress, parsedAmount],
         })
       }
 
@@ -120,18 +208,17 @@
         const config = {
           net: 'PrivateNet',
           script: Neon.default.create.script(props),
-          address: testAddress,
+          address: fromAddress,
           privateKey: testPrivateKey,
           gas: 0,
         };
 
-        console.log('About to send RCP request.')
+        // console.log('About to send RCP request.')
         return Neon.default.doInvoke(config)
         .then(res => {
-          console.log('RPC request sent.');
-          console.log('Request successful: ' + res.response.result);
+          // console.log('RPC request sent.');
+          // console.log('Request successful: ' + res.response.result);
           console.log('Transaction Id: ' + res.response.txid);
-          console.log('Transaction will be invoked in the next block.')
           return res.response.result;
         })
         .catch(err => {
